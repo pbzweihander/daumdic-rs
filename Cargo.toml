@@ -1,0 +1,12 @@
+[package]
+name = "daumdic"
+version = "0.1.0"
+authors = ["pbzweihander <sd852456@naver.com>"]
+description = "Daum Dictionary API"
+license = "MIT/Apache-2.0"
+
+[dependencies]
+reqwest = "0.8"
+failure = "0.1"
+failure_derive = "0.1"
+kuchiki = "0.6"
