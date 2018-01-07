@@ -1,5 +1,7 @@
 # daumdic-rs
 
+[![crate.io](https://img.shields.io/crates/v/daumdic.svg)](https://crates.io/crates/daumdic) [![docs.rs](https://docs.rs/daumdic/badge.svg)](https://docs.rs/daumdic)
+
 [Daum Dictionary](http://dic.daum.net) API with Rust, inspired by [daumdic-ruby](https://github.com/simnalamburt/daumdic-ruby)
 
 ```rust
@@ -14,6 +16,4 @@ fn main() {
 
 ------
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT)
-
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE-APACHE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT) [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE-APACHE)
