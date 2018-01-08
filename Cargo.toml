@@ -1,9 +1,12 @@
 [package]
 name = "daumdic"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["pbzweihander <sd852456@naver.com>"]
 description = "Daum Dictionary API"
 license = "MIT/Apache-2.0"
+documentation = "https://docs.rs/daumdic/"
+repository = "https://github.com/pbzweihander/daumdic"
+readme = "README.md"
 
 [dependencies]
 reqwest = "0.8"
