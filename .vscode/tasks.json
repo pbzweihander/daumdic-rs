@@ -13,6 +13,17 @@
             "problemMatcher": [
                 "$rustc"
             ]
+        },
+        {
+            "type": "shell",
+            "label": "cargo clippy",
+            "command": "cargo",
+            "args": [
+                "clippy"
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ]
         }
     ]
 }
