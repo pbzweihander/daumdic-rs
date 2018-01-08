@@ -5,7 +5,7 @@ authors = ["pbzweihander <sd852456@naver.com>"]
 description = "Daum Dictionary API"
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/daumdic/"
-repository = "https://github.com/pbzweihander/daumdic"
+repository = "https://github.com/pbzweihander/daumdic-rs"
 readme = "README.md"
 
 [dependencies]

@@ -138,25 +138,16 @@ pub fn search(word: &str) -> Result<Word> {
     };
     let sbox = sbox.as_node();
 
-    let word = match sbox.select_first(".txt_cleansch") {
-        Ok(w) => w,
-        Err(_) => sbox.select_first(".txt_searchword").unwrap(),
-    }.text_contents();
-    let meaning = sbox.select(".txt_search")
-        .unwrap()
-        .map(|m| m.text_contents())
-        .collect::<Vec<String>>()
-        .join(", ");
-    let pronounce = match sbox.select_first(".txt_pronounce") {
-        Ok(p) => p.text_contents(),
-        Err(_) => String::new(),
-    };
+    let word = sbox.select_first(".txt_cleansch")
+        .or(sbox.select_first(".txt_searchword"))
+        .or(sbox.select_first(".txt_hanjaword"))
+        .map_err::<Error, _>(|_| ErrorKind::ParsingFailed.into())?
+        .text_contents();
     let lang: Lang = {
         let lang = sbox.ancestors()
             .next()
-            .unwrap()
-            .select_first(".tit_word")
-            .unwrap()
+            .and_then(|a| a.select_first(".tit_word").ok())
+            .ok_or::<Error>(ErrorKind::ParsingFailed.into())?
             .text_contents();
         if lang.starts_with("한국") {
             Lang::Korean
@@ -170,6 +161,16 @@ pub fn search(word: &str) -> Result<Word> {
             Lang::Other(lang)
         }
     };
+    let meaning = sbox.select(".txt_search")
+        .map_err::<Error, _>(|_| ErrorKind::ParsingFailed.into())?
+        .map(|m| m.text_contents())
+        .collect::<Vec<String>>()
+        .join(", ");
+    let pronounce = match lang {
+        Lang::Hanja => sbox.select_first(".sub_read"),
+        _ => sbox.select_first(".txt_pronounce"),
+    }.map(|p| p.text_contents())
+        .unwrap_or(String::new());
 
     Ok(Word {
         word,

@@ -76,6 +76,21 @@ fn japanese() {
 }
 
 #[test]
+fn hanja() {
+    let res = match search("방") {
+        Ok(o) => o,
+        Err(e) => panic!("Should Ok but got error: {}", e),
+    };
+    assert_eq!(res.word, "方");
+    assert_eq!(
+        res.meaning,
+        "모, 사방, 방위(方位), 나란히 하다, 뗏목, 놓다, 본뜨다, 본받음, 내치다, 놓이다, 둑, 방비하다, 제방(堤防), 방지함, 막다, 방, 집, 전동(箭筒), 송이, 아내, 입다, 어둡다, 날리다, 두껍다, 입힘"
+    );
+    assert_eq!(res.pronounce, "모 방, 본뜰 방, 괴물 망");
+    assert_eq!(res.lang, Lang::Hanja);
+}
+
+#[test]
 fn other() {
     let res = match search("加油站") {
         Ok(o) => o,

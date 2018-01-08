@@ -22,5 +22,9 @@ error_chain! {
             description("Cannot find given word but got relative recommendation")
             display("Did you mean: {}", words.join(", "))
         }
+        ParsingFailed {
+            description("Parsing failed")
+            display("Parsing failed")
+        }
     }
 }
