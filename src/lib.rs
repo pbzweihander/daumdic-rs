@@ -51,9 +51,8 @@
 //! assert_eq!(res.lang, daumdic::Lang::Other("중국어사전".to_owned()));
 //! ```
 
-extern crate failure;
 #[macro_use]
-extern crate failure_derive;
+extern crate error_chain;
 extern crate kuchiki;
 extern crate reqwest;
 
@@ -62,21 +61,8 @@ use kuchiki::traits::TendrilSink;
 #[cfg(test)]
 mod tests;
 
-pub type Result<T> = std::result::Result<T, failure::Error>;
-
-/// An error resulting from search operation.
-#[derive(Fail, Debug)]
-pub enum SearchError {
-    /// When empty word was given to `search` function
-    #[fail(display = "Empty word")]
-    EmptyWordError,
-    /// Failed to find given word
-    #[fail(display = "Word not found")]
-    WordNotFoundError,
-    /// No matching word but found relative search result
-    #[fail(display = "Did you mean: {:?}", _0)]
-    RelativeResultFoundError(Vec<String>),
-}
+pub mod error;
+pub use error::{Error, ErrorKind, Result};
 
 /// Type of word language
 #[derive(PartialEq, Debug)]
@@ -132,9 +118,7 @@ impl std::fmt::Display for Word {
 /// - cannot find given word
 /// - GET request failed
 pub fn search(word: &str) -> Result<Word> {
-    if word.is_empty() {
-        return Err(SearchError::EmptyWordError.into());
-    }
+    ensure!(!word.is_empty(), ErrorKind::EmptyWord);
 
     let mut addr = String::from("http://dic.daum.net/search.do?q=");
     addr.push_str(word);
@@ -146,13 +130,11 @@ pub fn search(word: &str) -> Result<Word> {
         .unwrap()
         .map(|r| r.text_contents())
         .collect::<Vec<String>>();
-    if !rel.is_empty() {
-        return Err(SearchError::RelativeResultFoundError(rel).into());
-    }
+    ensure!(rel.is_empty(), ErrorKind::RelativeResultFound(rel));
 
     let sbox = match document.select_first(".search_box") {
         Ok(b) => b,
-        Err(_) => return Err(SearchError::WordNotFoundError.into()),
+        Err(_) => bail!(ErrorKind::WordNotFound),
     };
     let sbox = sbox.as_node();
 

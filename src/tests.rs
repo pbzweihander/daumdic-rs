@@ -4,12 +4,9 @@ use super::*;
 fn empty_word() {
     match search("") {
         Ok(o) => panic!("Should panic but got Ok: {}", o),
-        Err(e) => match e.downcast::<SearchError>() {
-            Ok(e) => match e {
-                SearchError::EmptyWordError => {}
-                e => panic!("Should EmptyWordError but got {}", e),
-            },
-            Err(e) => panic!("Should SearchError but got {}", e),
+        Err(e) => match e {
+            Error(ErrorKind::EmptyWord, _) => (),
+            _ => panic!("Should EmptyWord error but got {}", e),
         },
     };
 }
@@ -18,12 +15,9 @@ fn empty_word() {
 fn not_found() {
     match search("asdfaserqfasd") {
         Ok(o) => panic!("Should panic but got Ok: {}", o),
-        Err(e) => match e.downcast::<SearchError>() {
-            Ok(e) => match e {
-                SearchError::WordNotFoundError => {}
-                e => panic!("Should WordNotFoundError but got {}", e),
-            },
-            Err(e) => panic!("Should SearchError but got {}", e),
+        Err(e) => match e {
+            Error(ErrorKind::WordNotFound, _) => (),
+            _ => panic!("Should WordNotFound error but got {}", e),
         },
     }
 }
@@ -32,15 +26,9 @@ fn not_found() {
 fn relative() {
     match search("resista") {
         Ok(o) => panic!("Should panic but got Ok: {}", o),
-        Err(e) => match e.downcast::<SearchError>() {
-            Ok(e) => match e {
-                SearchError::RelativeResultFoundError(v) => match v[0].as_str() {
-                    "resist" => {}
-                    o => panic!("Should 'resist' but got '{}'", o),
-                },
-                e => panic!("Should RelativeResultFoundError but got {}", e),
-            },
-            Err(e) => panic!("Should SearchError but got {}", e),
+        Err(e) => match e {
+            Error(ErrorKind::RelativeResultFound(_), _) => (),
+            _ => panic!("Should RelativeResultFound error but got {}", e),
         },
     }
 }
