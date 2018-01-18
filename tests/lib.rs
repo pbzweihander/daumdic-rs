@@ -1,4 +1,6 @@
-use super::*;
+extern crate daumdic;
+
+use daumdic::*;
 
 #[test]
 fn empty_word() {
@@ -84,7 +86,7 @@ fn hanja() {
     assert_eq!(res.word, "方");
     assert_eq!(
         res.meaning,
-        "모, 사방, 방위(方位), 나란히 하다, 뗏목, 놓다, 본뜨다, 본받음, 내치다, 놓이다, 둑, 방비하다, 제방(堤防), 방지함, 막다, 방, 집, 전동(箭筒), 송이, 아내, 입다, 어둡다, 날리다, 두껍다, 입힘"
+        "모, 사방, 방위(方位), 나란히 하다, 뗏목, 놓다, 본뜨다, 본받음, 내치다, 놓이다, 곁, 풀 이름, 기대다, 옆, 쑥의 한 가지, 입다, 어둡다, 날리다, 두껍다, 입힘, 용, 얼룩, 언덕, 사랑하다, 상상적인 신령한 동물"
     );
     assert_eq!(res.pronounce, "모 방, 본뜰 방, 괴물 망");
     assert_eq!(res.lang, Lang::Hanja);

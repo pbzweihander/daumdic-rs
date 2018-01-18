@@ -58,9 +58,6 @@ extern crate reqwest;
 
 use kuchiki::traits::TendrilSink;
 
-#[cfg(test)]
-mod tests;
-
 pub mod error;
 pub use error::{Error, ErrorKind, Result};
 
