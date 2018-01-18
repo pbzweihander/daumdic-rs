@@ -2,7 +2,7 @@
 name = "daumdic"
 version = "0.2.2"
 authors = ["pbzweihander <sd852456@naver.com>"]
-description = "Daum Dictionary API"
+description = "Daum Dictionary API wrapper"
 license = "MIT/Apache-2.0"
 documentation = "https://docs.rs/daumdic/"
 repository = "https://github.com/pbzweihander/daumdic-rs"
