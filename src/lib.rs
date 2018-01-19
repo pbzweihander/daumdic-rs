@@ -58,8 +58,8 @@ extern crate reqwest;
 
 use kuchiki::traits::TendrilSink;
 
-pub mod error;
-pub use error::{Error, ErrorKind, Result};
+pub mod errors;
+pub use errors::{Error, ErrorKind, Result};
 
 /// Type of word language
 #[derive(PartialEq, Debug)]
