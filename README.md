@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE-APACHE)
 
-[Daum Dictionary](http://dic.daum.net) API written in Rust, inspired by [daumdic-ruby](https://github.com/simnalamburt/daumdic-ruby)
+[Daum Dictionary](http://dic.daum.net) API wrapper written in Rust, inspired by [daumdic-ruby](https://github.com/simnalamburt/daumdic-ruby)
 
 ```rust
 extern crate daumdic;
