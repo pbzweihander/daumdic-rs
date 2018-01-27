@@ -1,6 +1,6 @@
 [package]
 name = "daumdic"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["pbzweihander <sd852456@naver.com>"]
 description = "Daum Dictionary API wrapper"
 license = "MIT/Apache-2.0"
@@ -10,5 +10,5 @@ readme = "README.md"
 
 [dependencies]
 reqwest = "0.8"
-kuchiki = "0.6"
+kuchiki = "0.7.0"
 error-chain = "0.11"

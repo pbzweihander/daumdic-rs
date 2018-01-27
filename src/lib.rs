@@ -8,47 +8,34 @@
 //! ## Korean
 //!
 //! ```
-//! let res = daumdic::search("독수리").unwrap();
+//! let res = daumdic::search("독수리").unwrap().word.unwrap();
 //! assert_eq!(res.word, "독수리");
-//! assert_eq!(res.meaning, "수릿과에 속한 큰 새");
-//! assert_eq!(res.pronounce, "[-쑤-]");
 //! assert_eq!(res.lang, daumdic::Lang::Korean);
+//! println!("{} {}", res.pronounce, res.meaning);
 //! ```
 //!
 //! ## English
 //!
 //! ```
-//! let res = daumdic::search("resist").unwrap();
+//! let res = daumdic::search("resist").unwrap().word.unwrap();
 //! assert_eq!(res.word, "resist");
-//! assert_eq!(
-//!     res.meaning,
-//!     "저항하다, 반대하다, 참다, 저지하다"
-//! );
-//! assert_eq!(res.pronounce, "[rizíst]");
 //! assert_eq!(res.lang, daumdic::Lang::English);
+//! println!("{}", res);
 //! ```
 //!
 //! ## Japanese
 //!
 //! ```
-//! let res = daumdic::search("ざつおん").unwrap();
+//! let res = daumdic::search("ざつおん").unwrap().word.unwrap();
 //! assert_eq!(res.word, "ざつおん");
-//! assert_eq!(
-//!     res.meaning,
-//!     "잡음, 소음, (라디오 등의) 잡음, <속어> 뜬소문, <속어> 말참견, 잡음, 시끄러운 소리, (비유적으로) 관계자 이외로부터 나오는 무책임한 발언‧의견, 전화‧라디오 등의 청취를 방해하는 소리, 불쾌한 느낌을 주는 소리"
-//! );
-//! assert_eq!(res.pronounce, "");
 //! assert_eq!(res.lang, daumdic::Lang::Japanese);
 //! ```
 //!
 //! ## Other (ex. Chinese)
 //!
 //! ```
-//! let res = daumdic::search("加油站").unwrap();
+//! let res = daumdic::search("加油站").unwrap().word.unwrap();
 //! assert_eq!(res.word, "加油站");
-//! assert_eq!(res.meaning, "주유소");
-//! assert_eq!(res.pronounce, "[jiāyóuzhàn]");
-//! assert_eq!(res.lang, daumdic::Lang::Other("중국어사전".to_owned()));
 //! ```
 
 #[macro_use]
@@ -62,7 +49,7 @@ pub mod errors;
 pub use errors::{Error, ErrorKind, Result};
 
 /// Type of word language
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Lang {
     Korean,
     English,
@@ -72,6 +59,7 @@ pub enum Lang {
 }
 
 /// Result of `search` function
+#[derive(Clone)]
 pub struct Word {
     pub word: String,
     pub meaning: String,
@@ -79,13 +67,6 @@ pub struct Word {
     pub lang: Lang,
 }
 
-/// Quick way to make clean output
-///
-/// # Example
-///
-/// ```
-/// assert_eq!(format!("{}", daumdic::search("ironic").unwrap()), "ironic  [airάnik]  아이러니한, 역설적인, 모순적인, 반어적인");
-/// ```
 impl std::fmt::Display for Word {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         if let Lang::Other(ref d) = self.lang {
@@ -99,12 +80,18 @@ impl std::fmt::Display for Word {
     }
 }
 
+/// Output of `search` function.
+pub struct SearchResult {
+    pub word: Option<Word>,
+    pub alternatives: Vec<String>,
+}
+
 /// The main function.
 ///
 /// # Example
 ///
 /// ```
-/// println!("{}", daumdic::search("zoo").unwrap().meaning);
+/// println!("{}", daumdic::search("zoo").unwrap().word.unwrap());
 /// ```
 ///
 /// # Errors
@@ -112,9 +99,8 @@ impl std::fmt::Display for Word {
 /// This function fails if:
 ///
 /// - given word is empty
-/// - cannot find given word
 /// - GET request failed
-pub fn search(word: &str) -> Result<Word> {
+pub fn search(word: &str) -> Result<SearchResult> {
     ensure!(!word.is_empty(), ErrorKind::EmptyWord);
 
     let mut addr = String::from("http://dic.daum.net/search.do?q=");
@@ -122,56 +108,64 @@ pub fn search(word: &str) -> Result<Word> {
     let mut resp = reqwest::get(&addr)?;
     let document = kuchiki::parse_html().one(resp.text()?);
 
-    let rel = document
-        .select(".link_speller")
-        .unwrap()
-        .map(|r| r.text_contents())
-        .collect::<Vec<String>>();
-    ensure!(rel.is_empty(), ErrorKind::RelativeResultFound(rel));
-
-    let sbox = document
+    let word = document
         .select_first(".search_box")
-        .map_err(|_| ErrorKind::WordNotFound)?;
-    let sbox = sbox.as_node();
+        .ok()
+        .map(|sbox| sbox.as_node().clone())
+        .map(|sbox| {
+            let word = sbox.select_first(".txt_cleansch")
+                .or_else(|_| sbox.select_first(".txt_searchword"))
+                .or_else(|_| sbox.select_first(".txt_hanjaword"))
+                .ok()
+                .map(|element| element.text_contents());
+            let lang = sbox.ancestors()
+                .next()
+                .and_then(|a| a.select_first(".tit_word").ok())
+                .map(|element| element.text_contents())
+                .map(|lang| {
+                    if lang.starts_with("한국") {
+                        Lang::Korean
+                    } else if lang.starts_with("영") {
+                        Lang::English
+                    } else if lang.starts_with("일") {
+                        Lang::Japanese
+                    } else if lang.starts_with("한자") {
+                        Lang::Hanja
+                    } else {
+                        Lang::Other(lang)
+                    }
+                });
+            let pronounce = sbox.select_first(".sub_read")
+                .ok()
+                .or_else(|| sbox.select_first(".txt_pronounce").ok())
+                .map(|element| element.text_contents())
+                .unwrap_or_default();
+            let meaning = sbox.select(".txt_search").ok().map(|select| {
+                select
+                    .map(|element| element.text_contents())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            });
+            (word, lang, pronounce, meaning)
+        })
+        .and_then(|word| match word {
+            (Some(word), Some(lang), pronounce, Some(meaning)) => {
+                Some((word, lang, pronounce, meaning))
+            }
+            _ => None,
+        })
+        .map(|(word, lang, pronounce, meaning)| Word {
+            word,
+            lang,
+            pronounce,
+            meaning,
+        });
 
-    let word = sbox.select_first(".txt_cleansch")
-        .or_else(|_| sbox.select_first(".txt_searchword"))
-        .or_else(|_| sbox.select_first(".txt_hanjaword"))
-        .map_err(|_| ErrorKind::ParsingFailed)?
-        .text_contents();
-    let lang: Lang = {
-        let lang = sbox.ancestors()
-            .next()
-            .and_then(|a| a.select_first(".tit_word").ok())
-            .ok_or(ErrorKind::ParsingFailed)?
-            .text_contents();
-        if lang.starts_with("한국") {
-            Lang::Korean
-        } else if lang.starts_with("영") {
-            Lang::English
-        } else if lang.starts_with("일") {
-            Lang::Japanese
-        } else if lang.starts_with("한자") {
-            Lang::Hanja
-        } else {
-            Lang::Other(lang)
-        }
-    };
-    let meaning = sbox.select(".txt_search")
-        .map_err(|_| ErrorKind::ParsingFailed)?
-        .map(|m| m.text_contents())
-        .collect::<Vec<String>>()
-        .join(", ");
-    let pronounce = match lang {
-        Lang::Hanja => sbox.select_first(".sub_read"),
-        _ => sbox.select_first(".txt_pronounce"),
-    }.map(|p| p.text_contents())
+    let alternatives = document
+        .select(".link_speller")
+        .ok()
+        .map(|select| select.map(|r| r.text_contents()).collect::<Vec<String>>())
         .unwrap_or_default();
 
-    Ok(Word {
-        word,
-        meaning,
-        pronounce,
-        lang,
-    })
+    Ok(SearchResult { word, alternatives })
 }
