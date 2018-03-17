@@ -8,6 +8,7 @@ use self::futures::stream::iter_ok;
 use self::tokio_core::reactor::Handle;
 use super::{parse_document, Error, SearchResult};
 
+/// Async search function. Requires handle.
 pub fn search(handle: &Handle, word: &str) -> Box<Future<Item = SearchResult, Error = Error>> {
     Box::new(
         request::Client::new(handle)
