@@ -1,0 +1,19 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: rust:1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - test-0-{{ checksum "Cargo.toml" }}
+            - test-0-
+      - run:
+          name: test
+          command: cargo test
+      - save_cache:
+          key: test-0-{{ checksum "Cargo.toml" }}
+          paths:
+            - ~/.cargo
+            - target
