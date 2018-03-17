@@ -1,5 +1,6 @@
 # daumdic-rs
 
+[![circleci](https://circleci.com/gh/pbzweihander/daumdic-rs.svg?style=shield)](https://circleci.com/gh/pbzweihander/daumdic-rs)
 [![crate.io](https://img.shields.io/crates/v/daumdic.svg)](https://crates.io/crates/daumdic)
 [![docs.rs](https://docs.rs/daumdic/badge.svg)](https://docs.rs/daumdic)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT)
