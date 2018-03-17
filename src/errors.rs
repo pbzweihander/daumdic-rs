@@ -5,6 +5,7 @@
 error_chain! {
     foreign_links {
         Request(::reqwest::Error);
+        FromUtf8(::std::string::FromUtf8Error);
     }
     errors {
         /// When empty word was given to `search` function

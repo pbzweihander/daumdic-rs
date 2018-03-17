@@ -48,6 +48,9 @@ use kuchiki::traits::TendrilSink;
 pub mod errors;
 pub use errors::{Error, ErrorKind, Result};
 
+#[cfg(feature = "async")]
+pub mod async;
+
 /// Type of word language
 #[derive(PartialEq, Clone, Debug)]
 pub enum Lang {
@@ -86,27 +89,8 @@ pub struct SearchResult {
     pub alternatives: Vec<String>,
 }
 
-/// The main function.
-///
-/// # Example
-///
-/// ```
-/// println!("{}", daumdic::search("zoo").unwrap().word.unwrap());
-/// ```
-///
-/// # Errors
-///
-/// This function fails if:
-///
-/// - given word is empty
-/// - GET request failed
-pub fn search(word: &str) -> Result<SearchResult> {
-    ensure!(!word.is_empty(), ErrorKind::EmptyWord);
-
-    let mut addr = String::from("http://dic.daum.net/search.do?q=");
-    addr.push_str(word);
-    let mut resp = reqwest::get(&addr)?;
-    let document = kuchiki::parse_html().one(resp.text()?);
+fn parse_document(content: String) -> SearchResult {
+    let document = kuchiki::parse_html().one(content);
 
     let word = document
         .select_first(".search_box")
@@ -167,5 +151,28 @@ pub fn search(word: &str) -> Result<SearchResult> {
         .map(|select| select.map(|r| r.text_contents()).collect::<Vec<String>>())
         .unwrap_or_default();
 
-    Ok(SearchResult { word, alternatives })
+    SearchResult { word, alternatives }
+}
+
+/// The main function.
+///
+/// # Example
+///
+/// ```
+/// println!("{}", daumdic::search("zoo").unwrap().word.unwrap());
+/// ```
+///
+/// # Errors
+///
+/// This function fails if:
+///
+/// - given word is empty
+/// - GET request failed
+pub fn search(word: &str) -> Result<SearchResult> {
+    ensure!(!word.is_empty(), ErrorKind::EmptyWord);
+
+    reqwest::get(&format!("http://dic.daum.net/search.do?q={}", word))
+        .and_then(|mut resp| resp.text())
+        .map(|content| parse_document(content))
+        .map_err(|e| e.into())
 }

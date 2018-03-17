@@ -1,4 +1,6 @@
 extern crate daumdic;
+extern crate futures;
+extern crate tokio_core;
 
 use daumdic::*;
 

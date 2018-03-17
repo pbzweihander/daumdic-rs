@@ -11,7 +11,7 @@ jobs:
             - test-0-
       - run:
           name: test
-          command: cargo test
+          command: cargo test --features async
       - save_cache:
           key: test-0-{{ checksum "Cargo.toml" }}
           paths:
