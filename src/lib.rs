@@ -91,7 +91,9 @@ pub struct Search {
 
 fn parse_document(document: Html) -> Result<Search> {
     lazy_static! {
-        static ref SELECTOR_BOX: Selector = Selector::parse(".search_box").unwrap();
+        static ref SELECTOR_CARD: Selector = Selector::parse(".card_word").unwrap();
+        static ref SELECTOR_ITEM: Selector =
+            Selector::parse(".cleanword_type,.search_type").unwrap();
         static ref SELECTOR_WORD: Selector =
             Selector::parse(".txt_cleansch,.txt_searchword,.txt_hanjaword").unwrap();
         static ref SELECTOR_LANG: Selector = Selector::parse(".tit_word").unwrap();
@@ -102,22 +104,11 @@ fn parse_document(document: Html) -> Result<Search> {
     }
 
     let words = document
-        .select(&SELECTOR_BOX)
-        .map(|element| {
-            let word = element
-                .select(&SELECTOR_WORD)
-                .flat_map(|element| element.text())
-                .map(|s| s.to_string())
-                .next();
-            let lang = element
-                .parent()
-                .and_then(|node| scraper::ElementRef::wrap(node))
-                .and_then(|element| {
-                    element
-                        .select(&SELECTOR_LANG)
-                        .flat_map(|element| element.text())
-                        .next()
-                })
+        .select(&SELECTOR_CARD)
+        .filter_map(|card| {
+            let lang = card
+                .select(&SELECTOR_LANG)
+                .map(|element| element.text().collect::<Vec<_>>().join(""))
                 .map(|lang| {
                     if lang.starts_with("한국") {
                         Lang::Korean
@@ -130,26 +121,39 @@ fn parse_document(document: Html) -> Result<Search> {
                     } else {
                         Lang::Other(lang.to_string())
                     }
-                });
-            let pronounce = element
-                .select(&SELECTOR_PRONOUNCE)
-                .map(|element| element.text().collect::<Vec<_>>().join(""))
+                })
                 .next();
-            let meaning = element
-                .select(&SELECTOR_MEANING)
-                .map(|element| element.text().collect::<Vec<_>>().join(""))
-                .collect::<Vec<_>>();
-            (word, lang, pronounce, meaning)
-        })
-        .filter_map(|t| match t {
-            (Some(word), Some(lang), pronounce, meaning) => Some((word, lang, pronounce, meaning)),
-            _ => None,
-        })
-        .map(|(word, lang, pronounce, meaning)| Word {
-            word,
-            lang,
-            pronounce,
-            meaning,
+
+            card.select(&SELECTOR_ITEM)
+                .map(|item| {
+                    let word = item
+                        .select(&SELECTOR_WORD)
+                        .map(|element| element.text().collect::<Vec<_>>().join(""))
+                        .next();
+                    let pronounce = item
+                        .select(&SELECTOR_PRONOUNCE)
+                        .map(|element| element.text().collect::<Vec<_>>().join(""))
+                        .next();
+                    let meaning = item
+                        .select(&SELECTOR_MEANING)
+                        .map(|element| element.text().collect::<Vec<_>>().join(""))
+                        .collect::<Vec<_>>();
+
+                    (word, lang.clone(), pronounce, meaning)
+                })
+                .filter_map(|t| match t {
+                    (Some(word), Some(lang), pronounce, meaning) => {
+                        Some((word, lang, pronounce, meaning))
+                    }
+                    _ => None,
+                })
+                .map(|(word, lang, pronounce, meaning)| Word {
+                    word,
+                    lang,
+                    pronounce,
+                    meaning,
+                })
+                .next()
         })
         .collect();
     let alternatives = document
