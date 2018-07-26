@@ -1,17 +1,13 @@
-//! Errors for `daumdic` crate using `error_chain`
+//! Errors for `daumdic` crate using `failure`
 
 #![allow(missing_docs)]
 
-error_chain! {
-    foreign_links {
-        Request(::reqwest::Error);
-        FromUtf8(::std::string::FromUtf8Error);
-    }
-    errors {
-        /// When empty word was given to `search` function
-        EmptyWord {
-            description("Empty word was given")
-            display("Empty word")
-        }
-    }
+pub use failure::Error;
+pub type Result<T> = ::std::result::Result<T, ::failure::Error>;
+
+/// When empty word was given to `search` function
+#[derive(Debug, Fail)]
+pub enum DictionaryError {
+    #[fail(display = "empty word was given")]
+    EmptyWord,
 }
