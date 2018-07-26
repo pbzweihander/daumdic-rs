@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+- better search result
+
 ## 0.5.0
 
 - now parsing html using [scraper](https://docs.rs/scraper) instead of kuchiki
