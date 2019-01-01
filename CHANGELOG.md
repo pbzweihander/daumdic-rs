@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0
+
+- use [hyper](https://hyper.rs) instead of reqwest
+- `search` function returns `impl Future<Item = Search, Error = failure::Error>`
+- updated dependendies
+- with Rust 2018 Edition!
+
 ## 0.5.1
 
 - better search result
