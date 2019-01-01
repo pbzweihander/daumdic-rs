@@ -2,6 +2,8 @@
 
 #![allow(missing_docs)]
 
+use failure::Fail;
+
 pub use failure::Error;
 pub type Result<T> = ::std::result::Result<T, ::failure::Error>;
 

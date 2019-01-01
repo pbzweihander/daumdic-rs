@@ -5,53 +5,37 @@
 //!
 //! # Examples
 //!
-//! ## Korean
-//!
 //! ```
-//! let res = &daumdic::search("독수리").unwrap().words[0];
+//! # use futures::prelude::*;
+//! # use tokio::runtime::current_thread::Runtime;
+//! # fn main() {
+//! # let mut rt = Runtime::new().unwrap();
+//! let res_future = daumdic::search("독수리");
+//! let res = &rt.block_on(res_future).unwrap().words[0];
 //! assert_eq!(res.word, "독수리");
 //! assert_eq!(res.lang, daumdic::Lang::Korean);
 //! println!("{:?} {}", res.pronounce, res.meaning.join(", "));
+//! # }
 //! ```
-//!
-//! ## English
-//!
-//! ```
-//! let res = &daumdic::search("resist").unwrap().words[0];
-//! assert_eq!(res.word, "resist");
-//! assert_eq!(res.lang, daumdic::Lang::English);
-//! println!("{}", res);
-//! ```
-//!
-//! ## Japanese
-//!
-//! ```
-//! let res = &daumdic::search("あと").unwrap().words[0];
-//! assert_eq!(res.word, "あと");
-//! assert_eq!(res.lang, daumdic::Lang::Japanese);
-//! ```
-//!
-//! ## Other (ex. Chinese)
-//!
-//! ```
-//! let res = &daumdic::search("加油站").unwrap().words[0];
-//! assert_eq!(res.word, "加油站");
-//! ```
-
-#[macro_use]
-extern crate failure;
-extern crate reqwest;
-extern crate scraper;
-#[macro_use]
-extern crate lazy_static;
 
 pub mod errors;
 
-use errors::Result;
-use scraper::{Html, Selector};
+use {
+    crate::errors::{Error, Result},
+    futures::prelude::*,
+    hyper::{Body, Client},
+    hyper_tls::HttpsConnector,
+    lazy_static::lazy_static,
+    percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET},
+    scraper::{Html, Selector},
+};
+
+fn encode(s: &str) -> String {
+    utf8_percent_encode(s, DEFAULT_ENCODE_SET).to_string()
+}
 
 /// Type of word language
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Lang {
     Korean,
     English,
@@ -89,7 +73,7 @@ pub struct Search {
     pub alternatives: Vec<String>,
 }
 
-fn parse_document(document: Html) -> Result<Search> {
+fn parse_document(document: &Html) -> Result<Search> {
     lazy_static! {
         static ref SELECTOR_CARD: Selector = Selector::parse(".card_word").unwrap();
         static ref SELECTOR_ITEM: Selector =
@@ -172,9 +156,15 @@ fn parse_document(document: Html) -> Result<Search> {
 /// # Example
 ///
 /// ```
-/// for word in daumdic::search("zoo").unwrap().words {
+/// # use futures::prelude::*;
+/// # use tokio::runtime::current_thread::Runtime;
+/// # fn main() {
+/// # let mut rt = Runtime::new().unwrap();
+/// let res = rt.block_on(daumdic::search("zoo")).unwrap();
+/// for word in res.words {
 ///     println!("{}", word);
 /// }
+/// # }
 /// ```
 ///
 /// # Errors
@@ -183,10 +173,30 @@ fn parse_document(document: Html) -> Result<Search> {
 ///
 /// - given word is empty
 /// - GET request failed
-pub fn search(word: &str) -> Result<Search> {
-    ensure!(!word.is_empty(), errors::DictionaryError::EmptyWord);
+pub fn search(word: &str) -> impl Future<Item = Search, Error = Error> {
+    use futures::future::{err, result, Either};
 
-    let mut resp = reqwest::get(&format!("http://dic.daum.net/search.do?q={}", word))?;
-    let document = Html::parse_document(&resp.text()?);
-    parse_document(document)
+    if word.is_empty() {
+        Either::A(err(errors::DictionaryError::EmptyWord.into()))
+    } else {
+        let https = HttpsConnector::new(2).unwrap();
+        let client = Client::builder().build::<_, Body>(https);
+        let uri = format!("https://dic.daum.net/search.do?q={}", encode(word))
+            .parse()
+            .map_err(Into::into);
+
+        let uri_future = result(uri);
+        let resp_future = uri_future.and_then(move |uri| client.get(uri).map_err(Into::into));
+        let body_future = resp_future.and_then(|resp| {
+            resp.into_body().concat2().map_err(Into::into).map(|chunk| {
+                let v = chunk.to_vec();
+                String::from_utf8_lossy(&v).to_string()
+            })
+        });
+
+        Either::B(body_future.and_then(|body| {
+            let document = Html::parse_document(&body);
+            parse_document(&document)
+        }))
+    }
 }

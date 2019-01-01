@@ -1,28 +1,31 @@
-extern crate daumdic;
+use {daumdic::*, futures::prelude::*, tokio::runtime::current_thread::Runtime};
 
-use daumdic::*;
+fn run<T, E>(fut: impl Future<Item = T, Error = E>) -> Result<T, E> {
+    let mut rt = Runtime::new().unwrap();
+    rt.block_on(fut)
+}
 
 #[test]
 fn empty_word() {
-    assert!(search("").is_err())
+    assert!(run(search("")).is_err())
 }
 
 #[test]
 fn not_found() {
-    let res = search("asdfaserqfasd").unwrap();
+    let res = run(search("asdfaserqfasd")).unwrap();
     assert!(res.words.is_empty());
 }
 
 #[test]
 fn alternatives() {
-    let res = search("resista").unwrap();
+    let res = run(search("resista")).unwrap();
     assert!(!res.alternatives.is_empty());
     assert_eq!(res.alternatives[0], "resist");
 }
 
 #[test]
 fn korean() {
-    let res = &search("독수리").unwrap().words[0];
+    let res = &run(search("독수리")).unwrap().words[0];
     assert_eq!(res.word, "독수리");
     assert!(!res.meaning.is_empty());
     assert!(res.pronounce.is_some());
@@ -31,7 +34,7 @@ fn korean() {
 
 #[test]
 fn english() {
-    let res = &search("resist").unwrap().words[0];
+    let res = &run(search("resist")).unwrap().words[0];
     assert_eq!(res.word, "resist");
     assert!(!res.meaning.is_empty());
     assert!(res.pronounce.is_some());
@@ -40,7 +43,7 @@ fn english() {
 
 #[test]
 fn japanese() {
-    let res = &search("あと").unwrap().words[0];
+    let res = &run(search("あと")).unwrap().words[0];
     assert_eq!(res.word, "あと");
     assert!(!res.meaning.is_empty());
     assert_eq!(res.lang, Lang::Japanese);
@@ -48,7 +51,7 @@ fn japanese() {
 
 #[test]
 fn hanja() {
-    let res = &search("방").unwrap().words[0];
+    let res = &run(search("방")).unwrap().words[0];
     assert_eq!(res.word, "方");
     assert!(!res.meaning.is_empty());
     assert!(res.pronounce.is_some());
@@ -57,7 +60,7 @@ fn hanja() {
 
 #[test]
 fn other() {
-    let res = &search("加油站").unwrap().words[0];
+    let res = &run(search("加油站")).unwrap().words[0];
     assert_eq!(res.word, "加油站");
     assert!(!res.meaning.is_empty());
     assert!(res.pronounce.is_some());
