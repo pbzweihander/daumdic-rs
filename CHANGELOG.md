@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1
+
+- use reqwest again (better at error handling and decoding)
+- `Search` struct now implements `Clone`
+
 ## 0.6.0
 
 - use [hyper](https://hyper.rs) instead of reqwest

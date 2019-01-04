@@ -23,16 +23,10 @@ pub mod errors;
 use {
     crate::errors::{Error, Result},
     futures::prelude::*,
-    hyper::{Body, Client},
-    hyper_tls::HttpsConnector,
     lazy_static::lazy_static,
-    percent_encoding::{utf8_percent_encode, DEFAULT_ENCODE_SET},
+    reqwest::r#async::Client,
     scraper::{Html, Selector},
 };
-
-fn encode(s: &str) -> String {
-    utf8_percent_encode(s, DEFAULT_ENCODE_SET).to_string()
-}
 
 /// Type of word language
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -67,7 +61,7 @@ impl std::fmt::Display for Word {
 }
 
 /// Output of `search` function.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Search {
     pub words: Vec<Word>,
     pub alternatives: Vec<String>,
@@ -174,29 +168,29 @@ fn parse_document(document: &Html) -> Result<Search> {
 /// - given word is empty
 /// - GET request failed
 pub fn search(word: &str) -> impl Future<Item = Search, Error = Error> {
-    use futures::future::{err, result, Either};
+    use futures::future::{err, Either};
 
     if word.is_empty() {
         Either::A(err(errors::DictionaryError::EmptyWord.into()))
     } else {
-        let https = HttpsConnector::new(2).unwrap();
-        let client = Client::builder().build::<_, Body>(https);
-        let uri = format!("https://dic.daum.net/search.do?q={}", encode(word))
-            .parse()
-            .map_err(Into::into);
+        let client = Client::new();
+        let url = format!("https://dic.daum.net/search.do?q={}", word);
 
-        let uri_future = result(uri);
-        let resp_future = uri_future.and_then(move |uri| client.get(uri).map_err(Into::into));
-        let body_future = resp_future.and_then(|resp| {
-            resp.into_body().concat2().map_err(Into::into).map(|chunk| {
-                let v = chunk.to_vec();
-                String::from_utf8_lossy(&v).to_string()
+        let fut = client
+            .get(&url)
+            .send()
+            .map_err(Into::into)
+            .and_then(|resp| {
+                resp.into_body()
+                    .concat2()
+                    .map(|chunk| String::from_utf8_lossy(&chunk).to_string())
+                    .map_err(Into::into)
             })
-        });
+            .and_then(|body| {
+                let document = Html::parse_document(&body);
+                parse_document(&document)
+            });
 
-        Either::B(body_future.and_then(|body| {
-            let document = Html::parse_document(&body);
-            parse_document(&document)
-        }))
+        Either::B(fut)
     }
 }
