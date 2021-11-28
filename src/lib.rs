@@ -21,10 +21,9 @@
 pub mod errors;
 
 use {
-    crate::errors::{Error, Result},
-    futures::prelude::*,
+    crate::errors::Result,
     lazy_static::lazy_static,
-    reqwest::r#async::Client,
+    reqwest::Client,
     scraper::{Html, Selector},
 };
 
@@ -167,30 +166,16 @@ fn parse_document(document: &Html) -> Result<Search> {
 ///
 /// - given word is empty
 /// - GET request failed
-pub fn search(word: &str) -> impl Future<Item = Search, Error = Error> {
-    use futures::future::{err, Either};
-
+pub async fn search(word: &str) -> Result<Search> {
     if word.is_empty() {
-        Either::A(err(errors::DictionaryError::EmptyWord.into()))
+        Err(errors::DictionaryError::EmptyWord.into())
     } else {
         let client = Client::new();
         let url = format!("https://dic.daum.net/search.do?q={}", word);
 
-        let fut = client
-            .get(&url)
-            .send()
-            .map_err(Into::into)
-            .and_then(|resp| {
-                resp.into_body()
-                    .concat2()
-                    .map(|chunk| String::from_utf8_lossy(&chunk).to_string())
-                    .map_err(Into::into)
-            })
-            .and_then(|body| {
-                let document = Html::parse_document(&body);
-                parse_document(&document)
-            });
-
-        Either::B(fut)
+        let resp = client.get(&url).send().await?;
+        let body = resp.text().await?;
+        let document = Html::parse_document(&body);
+        parse_document(&document)
     }
 }

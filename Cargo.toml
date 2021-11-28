@@ -1,6 +1,6 @@
 [package]
 name = "daumdic"
-version = "0.6.1"
+version = "0.7.0"
 authors = ["pbzweihander <sd852456@naver.com>"]
 description = "Daum Dictionary API wrapper"
 license = "MIT/Apache-2.0"
@@ -10,11 +10,10 @@ readme = "README.md"
 edition = "2018"
 
 [dependencies]
-failure = "0.1.4"
-scraper = "0.9.0"
-lazy_static = "1.2.0"
-futures = "0.1.25"
-reqwest = "0.9.5"
+failure = "0.1.8"
+scraper = "0.12.0"
+lazy_static = "1.4.0"
+reqwest = "0.11.6"
 
 [dev-dependencies]
-tokio = "0.1.13"
+tokio = { version = "1.14.0", features = ["macros"] }
