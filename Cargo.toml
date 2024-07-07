@@ -10,7 +10,7 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
-failure = "0.1.8"
+thiserror = "1"
 scraper = "0.19"
 reqwest = "0.12"
 

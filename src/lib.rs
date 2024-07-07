@@ -15,8 +15,6 @@
 
 #![deny(missing_docs)]
 
-pub mod errors;
-
 use scraper::Selector;
 use std::sync::OnceLock;
 
@@ -79,6 +77,19 @@ pub struct Search {
     pub alternatives: Vec<String>,
 }
 
+/// An error type for [`daumdic`] crate.
+///
+/// [`daumdic`]: crate
+#[derive(thiserror::Error, Debug)]
+pub enum DaumdicError {
+    /// Error when trying to search for an empty string
+    #[error("empty word was given")]
+    EmptyWord,
+    /// Error when the HTTP GET request fails
+    #[error("HTTP GET request failed")]
+    RequestFailed(#[from] reqwest::Error),
+}
+
 struct SelectorSet {
     card: Selector,
     item: Selector,
@@ -108,9 +119,9 @@ struct SelectorSet {
 /// This function will return an error under the following conditions:
 /// - If the input search term is an empty string
 /// - If the HTTP GET request fails due to network or server issues
-pub async fn search(word: &str) -> errors::Result<Search> {
+pub async fn search(word: &str) -> Result<Search, DaumdicError> {
     if word.is_empty() {
-        return Err(errors::DictionaryError::EmptyWord.into());
+        return Err(DaumdicError::EmptyWord);
     }
 
     let client = reqwest::Client::new();
