@@ -1,4 +1,4 @@
-use daumdic::*;
+use daumdic::{search, Lang};
 
 #[tokio::test]
 async fn empty_word() {
