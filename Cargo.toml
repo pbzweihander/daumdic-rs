@@ -7,7 +7,7 @@ license = "Apache-2.0 OR MIT"
 documentation = "https://docs.rs/daumdic/"
 repository = "https://github.com/pbzweihander/daumdic-rs"
 readme = "README.md"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 failure = "0.1.8"
