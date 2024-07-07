@@ -17,6 +17,7 @@
 pub mod errors;
 
 use scraper::Selector;
+use std::sync::OnceLock;
 
 /// A type indicating the language of a word.
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -77,6 +78,16 @@ pub struct Search {
     pub alternatives: Vec<String>,
 }
 
+struct SelectorSet {
+    card: Selector,
+    item: Selector,
+    word: Selector,
+    lang: Selector,
+    pronounce: Selector,
+    meaning: Selector,
+    alternatives: Selector,
+}
+
 /// A function that sends an HTTP GET request to the [Daum dictionary] to search for a word.
 ///
 /// [Daum Dictionary]: https://dic.daum.net/
@@ -107,24 +118,22 @@ pub async fn search(word: &str) -> errors::Result<Search> {
     let body = resp.text().await?;
     let document = scraper::Html::parse_document(&body);
 
-    lazy_static::lazy_static! {
-        static ref SELECTOR_CARD: Selector = Selector::parse(".card_word").unwrap();
-        static ref SELECTOR_ITEM: Selector =
-            Selector::parse(".cleanword_type,.search_type").unwrap();
-        static ref SELECTOR_WORD: Selector =
-            Selector::parse(".txt_cleansch,.txt_searchword,.txt_hanjaword").unwrap();
-        static ref SELECTOR_LANG: Selector = Selector::parse(".tit_word").unwrap();
-        static ref SELECTOR_PRONOUNCE: Selector =
-            Selector::parse(".sub_read,.txt_pronounce").unwrap();
-        static ref SELECTOR_MEANING: Selector = Selector::parse(".txt_search").unwrap();
-        static ref SELECTOR_ALTERNATIVES: Selector = Selector::parse(".link_speller").unwrap();
-    }
+    static SELECTOR_CACHE: OnceLock<SelectorSet> = OnceLock::new();
+    let selector = SELECTOR_CACHE.get_or_init(|| SelectorSet {
+        card: Selector::parse(".card_word").unwrap(),
+        item: Selector::parse(".cleanword_type,.search_type").unwrap(),
+        word: Selector::parse(".txt_cleansch,.txt_searchword,.txt_hanjaword").unwrap(),
+        lang: Selector::parse(".tit_word").unwrap(),
+        pronounce: Selector::parse(".sub_read,.txt_pronounce").unwrap(),
+        meaning: Selector::parse(".txt_search").unwrap(),
+        alternatives: Selector::parse(".link_speller").unwrap(),
+    });
 
     let words = document
-        .select(&SELECTOR_CARD)
+        .select(&selector.card)
         .filter_map(|card| {
             let lang = card
-                .select(&SELECTOR_LANG)
+                .select(&selector.lang)
                 .map(|element| element.text().collect::<Vec<_>>().join(""))
                 .map(|lang| {
                     if lang.starts_with("한국") {
@@ -141,18 +150,18 @@ pub async fn search(word: &str) -> errors::Result<Search> {
                 })
                 .next();
 
-            card.select(&SELECTOR_ITEM)
+            card.select(&selector.item)
                 .map(|item| {
                     let word = item
-                        .select(&SELECTOR_WORD)
+                        .select(&selector.word)
                         .map(|element| element.text().collect::<Vec<_>>().join(""))
                         .next();
                     let pronounce = item
-                        .select(&SELECTOR_PRONOUNCE)
+                        .select(&selector.pronounce)
                         .map(|element| element.text().collect::<Vec<_>>().join(""))
                         .next();
                     let meaning = item
-                        .select(&SELECTOR_MEANING)
+                        .select(&selector.meaning)
                         .map(|element| element.text().collect::<Vec<_>>().join(""))
                         .collect::<Vec<_>>();
 
@@ -174,7 +183,7 @@ pub async fn search(word: &str) -> errors::Result<Search> {
         })
         .collect();
     let alternatives = document
-        .select(&SELECTOR_ALTERNATIVES)
+        .select(&selector.alternatives)
         .map(|element| element.text().collect::<Vec<_>>().join(""))
         .collect();
 
