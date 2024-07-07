@@ -1,9 +1,7 @@
-//! # daumdic
+//! A Rust library that searches for words (Korean, English, Japanese, Chinese, ...) in the [Daum
+//! dictionary] and returns their meanings and pronunciations.
 //!
-//! Find word (Korean, English, Japanese, Chinese, ...) in Daum Dictionary
-//! and returns its meaning and pronuciation.
-//!
-//! # Examples
+//! [Daum Dictionary]: https://dic.daum.net/
 //!
 //! ```
 //! # tokio::runtime::Runtime::new().unwrap().block_on(async {
@@ -14,6 +12,8 @@
 //! # })
 //! ```
 
+#![deny(missing_docs)]
+
 pub mod errors;
 
 use {
@@ -23,22 +23,37 @@ use {
     scraper::{Html, Selector},
 };
 
-/// Type of word language
+/// A type indicating the language of a word.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Lang {
+    /// Korean
     Korean,
+    /// English
     English,
+    /// Japanese
     Japanese,
+    /// Hanzi, also known as Chinese characters. They may appear in search results for Korean and
+    /// Japanese, not just Chinese.
     Hanja,
+    /// Other languages
     Other(String),
 }
 
-/// Result of `search` function
+/// A type that contains the meaning, pronunciation, and language of each word returned by the
+/// [`search`] function.
+///
+/// [`search`]: crate::search
 #[derive(Clone, Debug)]
 pub struct Word {
+    /// The word returned as a search result
     pub word: String,
+    /// The meaning of the word, primarily written in Korean
     pub meaning: Vec<String>,
+    /// The pronunciation of the word, primarily using [IPA]
+    ///
+    /// [IPA]: https://en.wikipedia.org/wiki/International_Phonetic_Alphabet
     pub pronounce: Option<String>,
+    /// The language of the word
     pub lang: Lang,
 }
 
@@ -55,10 +70,15 @@ impl std::fmt::Display for Word {
     }
 }
 
-/// Output of `search` function.
+/// A type that contains the search results for words and alternative search terms returned by the
+/// [`search`] function.
+///
+/// [`search`]: crate::search
 #[derive(Debug, Clone)]
 pub struct Search {
+    /// The words returned as search results
     pub words: Vec<Word>,
+    /// Alternative search terms suggested by the Daum dictionary
     pub alternatives: Vec<String>,
 }
 
@@ -140,9 +160,9 @@ fn parse_document(document: &Html) -> Result<Search> {
     })
 }
 
-/// The main function.
+/// A function that sends an HTTP GET request to the [Daum dictionary] to search for a word.
 ///
-/// # Example
+/// [Daum Dictionary]: https://dic.daum.net/
 ///
 /// ```
 /// # tokio::runtime::Runtime::new().unwrap().block_on(async {
@@ -155,10 +175,9 @@ fn parse_document(document: &Html) -> Result<Search> {
 ///
 /// # Errors
 ///
-/// This function fails if:
-///
-/// - given word is empty
-/// - GET request failed
+/// This function will return an error under the following conditions:
+/// - If the input search term is an empty string
+/// - If the HTTP GET request fails due to network or server issues
 pub async fn search(word: &str) -> Result<Search> {
     if word.is_empty() {
         Err(errors::DictionaryError::EmptyWord.into())
