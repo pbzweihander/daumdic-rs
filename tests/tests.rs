@@ -58,4 +58,5 @@ async fn test() {
     assert!(!res.meaning.is_empty());
     assert!(res.pronounce.is_some());
     assert_eq!(res.lang, Lang::Other("중국어사전".to_owned()));
+    interval.tick().await;
 }

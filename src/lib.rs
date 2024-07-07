@@ -9,7 +9,8 @@
 //! assert_eq!(res.word, "독수리");
 //! assert_eq!(res.lang, daumdic::Lang::Korean);
 //! println!("{:?} {}", res.pronounce, res.meaning.join(", "));
-//! # })
+//! # });
+//! # std::thread::sleep(std::time::Duration::from_secs(1));
 //! ```
 
 #![deny(missing_docs)]
@@ -98,7 +99,8 @@ struct SelectorSet {
 /// for word in res.words {
 ///     println!("{}", word);
 /// }
-/// # })
+/// # });
+/// # std::thread::sleep(std::time::Duration::from_secs(1));
 /// ```
 ///
 /// # Errors
