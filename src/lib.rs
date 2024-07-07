@@ -16,12 +16,7 @@
 
 pub mod errors;
 
-use {
-    crate::errors::Result,
-    lazy_static::lazy_static,
-    reqwest::Client,
-    scraper::{Html, Selector},
-};
+use scraper::Selector;
 
 /// A type indicating the language of a word.
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -82,8 +77,37 @@ pub struct Search {
     pub alternatives: Vec<String>,
 }
 
-fn parse_document(document: &Html) -> Result<Search> {
-    lazy_static! {
+/// A function that sends an HTTP GET request to the [Daum dictionary] to search for a word.
+///
+/// [Daum Dictionary]: https://dic.daum.net/
+///
+/// ```
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let res = daumdic::search("zoo").await.unwrap();
+/// for word in res.words {
+///     println!("{}", word);
+/// }
+/// # })
+/// ```
+///
+/// # Errors
+///
+/// This function will return an error under the following conditions:
+/// - If the input search term is an empty string
+/// - If the HTTP GET request fails due to network or server issues
+pub async fn search(word: &str) -> errors::Result<Search> {
+    if word.is_empty() {
+        return Err(errors::DictionaryError::EmptyWord.into());
+    }
+
+    let client = reqwest::Client::new();
+    let url = format!("https://dic.daum.net/search.do?q={}", word);
+
+    let resp = client.get(&url).send().await?;
+    let body = resp.text().await?;
+    let document = scraper::Html::parse_document(&body);
+
+    lazy_static::lazy_static! {
         static ref SELECTOR_CARD: Selector = Selector::parse(".card_word").unwrap();
         static ref SELECTOR_ITEM: Selector =
             Selector::parse(".cleanword_type,.search_type").unwrap();
@@ -158,36 +182,4 @@ fn parse_document(document: &Html) -> Result<Search> {
         words,
         alternatives,
     })
-}
-
-/// A function that sends an HTTP GET request to the [Daum dictionary] to search for a word.
-///
-/// [Daum Dictionary]: https://dic.daum.net/
-///
-/// ```
-/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
-/// let res = daumdic::search("zoo").await.unwrap();
-/// for word in res.words {
-///     println!("{}", word);
-/// }
-/// # })
-/// ```
-///
-/// # Errors
-///
-/// This function will return an error under the following conditions:
-/// - If the input search term is an empty string
-/// - If the HTTP GET request fails due to network or server issues
-pub async fn search(word: &str) -> Result<Search> {
-    if word.is_empty() {
-        Err(errors::DictionaryError::EmptyWord.into())
-    } else {
-        let client = Client::new();
-        let url = format!("https://dic.daum.net/search.do?q={}", word);
-
-        let resp = client.get(&url).send().await?;
-        let body = resp.text().await?;
-        let document = Html::parse_document(&body);
-        parse_document(&document)
-    }
 }
