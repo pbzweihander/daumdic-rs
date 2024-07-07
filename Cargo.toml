@@ -1,6 +1,6 @@
 [package]
 name = "daumdic"
-version = "0.7.1"
+version = "0.8.0"
 authors = ["pbzweihander <sd852456@naver.com>", "Hyeon Kim <simnalamburt@gmail.com>"]
 description = "Daum Dictionary API wrapper"
 license = "Apache-2.0 OR MIT"
