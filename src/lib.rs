@@ -6,16 +6,12 @@
 //! # Examples
 //!
 //! ```
-//! # use futures::prelude::*;
-//! # use tokio::runtime::current_thread::Runtime;
-//! # fn main() {
-//! # let mut rt = Runtime::new().unwrap();
-//! let res_future = daumdic::search("독수리");
-//! let res = &rt.block_on(res_future).unwrap().words[0];
+//! # tokio::runtime::Runtime::new().unwrap().block_on(async {
+//! let res = &daumdic::search("독수리").await.unwrap().words[0];
 //! assert_eq!(res.word, "독수리");
 //! assert_eq!(res.lang, daumdic::Lang::Korean);
 //! println!("{:?} {}", res.pronounce, res.meaning.join(", "));
-//! # }
+//! # })
 //! ```
 
 pub mod errors;
@@ -149,15 +145,12 @@ fn parse_document(document: &Html) -> Result<Search> {
 /// # Example
 ///
 /// ```
-/// # use futures::prelude::*;
-/// # use tokio::runtime::current_thread::Runtime;
-/// # fn main() {
-/// # let mut rt = Runtime::new().unwrap();
-/// let res = rt.block_on(daumdic::search("zoo")).unwrap();
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let res = daumdic::search("zoo").await.unwrap();
 /// for word in res.words {
 ///     println!("{}", word);
 /// }
-/// # }
+/// # })
 /// ```
 ///
 /// # Errors
