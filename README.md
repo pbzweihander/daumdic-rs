@@ -1,7 +1,5 @@
-daumdic-rs
+daumdic-rs [![docs.rs]](https://crates.io/crates/daumdic)
 ========
-[![docs.rs]](https://docs.rs/daumdic)
-
 [Daum Dictionary] API wrapper written in Rust, inspired by [daumdic-ruby].
 
 ```rust
@@ -20,7 +18,7 @@ fn main() {
 *daumdic-rs* is primarily distributed under the terms of both the [Apache
 License (Version 2.0)] and the [MIT license]. See [COPYRIGHT] for details.
 
-[docs.rs]: https://docs.rs/daumdic/badge.svg
+[docs.rs]: https://badgen.net/crates/v/daumdic
 [Daum Dictionary]: https://dic.daum.net
 [daumdic-ruby]: https://github.com/simnalamburt/daumdic-ruby
 [Apache License (Version 2.0)]: LICENSE-APACHE
