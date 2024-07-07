@@ -105,9 +105,9 @@ fn parse_document(document: &Html) -> Result<Search> {
                 .map(|lang| {
                     if lang.starts_with("한국") {
                         Lang::Korean
-                    } else if lang.starts_with("영") {
+                    } else if lang.starts_with('영') {
                         Lang::English
-                    } else if lang.starts_with("일") {
+                    } else if lang.starts_with('일') {
                         Lang::Japanese
                     } else if lang.starts_with("한자") {
                         Lang::Hanja
